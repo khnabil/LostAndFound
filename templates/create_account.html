@@ -1,0 +1,75 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <title>Create Account</title>
+    <style>
+        body {
+            background-image: url('/static/images/background.jpg'); /* update with your actual image path */
+            background-size: cover;
+            background-repeat: no-repeat;
+            background-position: center;
+            font-family: Arial, sans-serif;
+        }
+        .container {
+            background-color: rgba(255, 255, 255, 0.9);
+            width: 400px;
+            margin: 100px auto;
+            padding: 30px;
+            border-radius: 12px;
+            box-shadow: 0 0 10px rgba(0,0,0,0.3);
+        }
+        h2 {
+            text-align: center;
+            margin-bottom: 25px;
+        }
+        input, select {
+            width: 100%;
+            padding: 10px;
+            margin: 10px 0 20px;
+            border: 1px solid #ccc;
+            border-radius: 6px;
+        }
+        button {
+            width: 100%;
+            background-color: #4CAF50;
+            color: white;
+            padding: 10px;
+            font-size: 16px;
+            border: none;
+            border-radius: 6px;
+            cursor: pointer;
+        }
+        button:hover {
+            background-color: #45a049;
+        }
+        .link {
+            text-align: center;
+            margin-top: 15px;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h2>Create Account</h2>
+        <form method="post">
+            {% csrf_token %}
+            <input type="text" name="user_id" placeholder="User ID" required>
+            <input type="text" name="name" placeholder="Name" required>
+            <input type="email" name="email" placeholder="Email" required>
+            <input type="text" name="department" placeholder="Department" required>
+            <input type="password" name="password" placeholder="Password" required>
+            <select name="user_type" required>
+                <option value="">Select User Type</option>
+                <option value="student">Student</option>
+                <option value="faculty">Faculty</option>
+                <option value="administrator">Administrator</option>
+            </select>
+            <button type="submit">Submit</button>
+        </form>
+        <div class="link">
+            <a href="/">Back to Login</a>
+        </div>
+    </div>
+</body>
+</html>

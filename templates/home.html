@@ -1,0 +1,76 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <title>Lost and Found - Home</title>
+    <style>
+        body {
+            margin: 0;
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            background-image: url('/static/images/home_bg.jpg'); /* Update image if needed */
+            background-size: cover;
+            background-repeat: no-repeat;
+            background-position: center;
+            color: white;
+        }
+        .navbar {
+            background-color: rgba(0, 0, 0, 0.8);
+            padding: 15px;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+        .navbar h1 {
+            margin: 0;
+            font-size: 24px;
+        }
+        .navbar a {
+            color: white;
+            text-decoration: none;
+            margin-left: 15px;
+            font-weight: bold;
+        }
+        .content {
+            text-align: center;
+            margin-top: 100px;
+        }
+        .content h2 {
+            font-size: 36px;
+            margin-bottom: 20px;
+        }
+        .content p {
+            font-size: 18px;
+        }
+        .btn {
+            background-color: #4CAF50;
+            padding: 12px 24px;
+            color: white;
+            border: none;
+            border-radius: 6px;
+            margin-top: 20px;
+            cursor: pointer;
+            font-size: 16px;
+        }
+        .btn:hover {
+            background-color: #45a049;
+        }
+    </style>
+</head>
+<body>
+    <div class="navbar">
+        <h1>Lost & Found Portal</h1>
+        <div>
+            <a href="#">Lost Items</a>
+            <a href="#">Found Items</a>
+            <a href="#">My Profile</a>
+            <a href="/logout/">Logout</a>
+        </div>
+    </div>
+
+    <div class="content">
+        <h2>Welcome {{ name }}!</h2>
+        <p>Start by reporting a lost item or checking what's been found on campus.</p>
+        <a href="#"><button class="btn">Report an Item</button></a>
+    </div>
+</body>
+</html>
