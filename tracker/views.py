@@ -137,7 +137,7 @@ def my_profile_view(request):
     name = request.session.get('user_name')
     user_type = request.session.get('user_type')
 
-    model = None
+    # Determine user model
     if user_type == "Student":
         from .models import Student as UserModel
     elif user_type == "Faculty":
@@ -147,9 +147,10 @@ def my_profile_view(request):
 
     user = UserModel.objects.get(user_id=user_id)
 
-    all_posts = LostItem.objects.filter(posted_by=user_id)  # You can adjust this
-    lost_count = all_posts.filter(type="Lost").count()
-    found_count = all_posts.filter(type="Found").count()
+    # Fetch posts
+    from .models import LostItem, FoundItem
+    lost_posts = LostItem.objects.filter(posted_by_id=user_id)
+    found_posts = FoundItem.objects.filter(posted_by_id=user_id)
 
     context = {
         "user_id": user.user_id,
@@ -157,9 +158,15 @@ def my_profile_view(request):
         "email": user.email,
         "department": user.department,
         "user_type": user_type,
-        "total_posts": all_posts.count(),
-        "lost_count": lost_count,
-        "found_count": found_count,
-        "posts": all_posts
+        "total_posts": lost_posts.count() + found_posts.count(),
+        "lost_count": lost_posts.count(),
+        "found_count": found_posts.count(),
+        "lost_posts": lost_posts,
+        "found_posts": found_posts
     }
+
     return render(request, 'my_profile.html', context)
+
+def home_view(request):
+    return render(request, 'home.html')
+

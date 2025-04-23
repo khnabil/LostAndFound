@@ -61,6 +61,7 @@
         <h1>Lost & Found Portal</h1>
         <div method="post" action="{% url 'logout' %}>
             {% csrf_token %}
+            <a href="{% url 'home' %}">Home</a>
             <a href="#">Lost Items</a>
             <a href="#">Found Items</a>
             <a href="{% url 'my_profile' %}">My Profile</a>

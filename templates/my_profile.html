@@ -11,17 +11,21 @@
             color: #333;
         }
         .navbar {
-            background-color: #333;
+            background-color: rgba(0, 0, 0, 0.8);
             padding: 15px;
             display: flex;
             justify-content: space-between;
             align-items: center;
+        }
+        .navbar h1 {
+            margin: 0;
+            font-size: 24px;
             color: white;
         }
         .navbar a {
             color: white;
-            margin-left: 15px;
             text-decoration: none;
+            margin-left: 15px;
             font-weight: bold;
         }
         .container {
@@ -83,7 +87,7 @@
     <div class="navbar">
         <h1>Lost & Found Portal</h1>
         <div>
-            <a href="/">Home</a>
+            <a href="{% url 'home' %}">Home</a>
             <a href="#">Lost Items</a>
             <a href="#">Found Items</a>
             <a href="#">My Profile</a>
