@@ -64,12 +64,6 @@
 
         <form method="POST">
             {% csrf_token %}
-            <select name="user_type" required>
-                <option value="">Select user type</option>
-                <option value="Student">Student</option>
-                <option value="Administrator">Administrator</option>
-                <option value="Faculty">Faculty</option>
-            </select>
 
             <input type="text" name="user_id" placeholder="Enter User ID" required>
             <input type="password" name="password" placeholder="Password" required>

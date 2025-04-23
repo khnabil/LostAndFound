@@ -1,34 +1,75 @@
 from django.shortcuts import render, redirect
 
-from .models import Student, Faculty, Administrator
+from .models import Student, Faculty, Administrator, LostItem, FoundItem
 
 
 from django.http import HttpResponse
 
 # Create your views here.
 
+# def login_view(request):
+#     if request.method == 'POST':
+#         user_type = request.POST.get('user_type')
+#         user_id = request.POST.get('user_id')
+#         password = request.POST.get("password")
+#         user = None
+
+#         if user_type=="Student":
+#             user = Student.objects.filter(user_id=user_id, password=password).first()
+#         elif user_type == "Faculty":
+#             user = Faculty.objects.filter(user_id=user_id, password=password).first()
+#         elif user_type == "Administrator":
+#             user = Administrator.objects.filter(user_id=user_id, password=password).first()
+
+#         if user:
+#             request.session['user_name'] = user.name
+
+#             return redirect('home')
+#         else:
+#             return render(request, 'login.html', {'error': 'please fill all fields'})
+#     return render(request, 'login.html')
+
 def login_view(request):
     if request.method == 'POST':
-        user_type = request.POST.get('user_type')
         user_id = request.POST.get('user_id')
-        password = request.POST.get("password")
+        password = request.POST.get('password')
+
         user = None
+        user_type = None
 
-        if user_type=="Student":
-            user = Student.objects.filter(user_id=user_id, password=password).first()
-        elif user_type == "Faculty":
-            user = Faculty.objects.filter(user_id=user_id, password=password).first()
-        elif user_type == "Administrator":
-            user = Administrator.objects.filter(user_id=user_id, password=password).first()
+        # Check in Student table
+        try:
+            user = Student.objects.get(user_id=user_id, password=password)
+            user_type = 'Student'
+        except Student.DoesNotExist:
+            pass
 
+        # Check in Faculty table
+        if not user:
+            try:
+                user = Faculty.objects.get(user_id=user_id, password=password)
+                user_type = 'Faculty'
+            except Faculty.DoesNotExist:
+                pass
+
+        # Check in Administrator table
+        if not user:
+            try:
+                user = Administrator.objects.get(user_id=user_id, password=password)
+                user_type = 'Administrator'
+            except Administrator.DoesNotExist:
+                pass
+
+        # If user is found in any table
         if user:
+            request.session['user_id'] = user.user_id
             request.session['user_name'] = user.name
-
-            return redirect('home')
+            request.session['user_type'] = user_type
+            return redirect('home')  # Redirect to home page
         else:
-            return render(request, 'login.html', {'error': 'please fill all fields'})
-    return render(request, 'login.html')
+            return render(request, 'login.html', {'error': 'No user data found. Please try again.'})
 
+    return render(request, 'login.html')
 
 
 def home_view(request):
@@ -85,4 +126,40 @@ def create_account_view(request):
     return render(request, 'create_account.html')
 
 
+def logout_view(request):
+    request.session.flush()
+    return redirect('login')
 
+
+
+def my_profile_view(request):
+    user_id = request.session.get('user_id')
+    name = request.session.get('user_name')
+    user_type = request.session.get('user_type')
+
+    model = None
+    if user_type == "Student":
+        from .models import Student as UserModel
+    elif user_type == "Faculty":
+        from .models import Faculty as UserModel
+    elif user_type == "Administrator":
+        from .models import Administrator as UserModel
+
+    user = UserModel.objects.get(user_id=user_id)
+
+    all_posts = LostItem.objects.filter(posted_by=user_id)  # You can adjust this
+    lost_count = all_posts.filter(type="Lost").count()
+    found_count = all_posts.filter(type="Found").count()
+
+    context = {
+        "user_id": user.user_id,
+        "name": user.name,
+        "email": user.email,
+        "department": user.department,
+        "user_type": user_type,
+        "total_posts": all_posts.count(),
+        "lost_count": lost_count,
+        "found_count": found_count,
+        "posts": all_posts
+    }
+    return render(request, 'my_profile.html', context)

@@ -59,10 +59,11 @@
 <body>
     <div class="navbar">
         <h1>Lost & Found Portal</h1>
-        <div>
+        <div method="post" action="{% url 'logout' %}>
+            {% csrf_token %}
             <a href="#">Lost Items</a>
             <a href="#">Found Items</a>
-            <a href="#">My Profile</a>
+            <a href="{% url 'my_profile' %}">My Profile</a>
             <a href="/logout/">Logout</a>
         </div>
     </div>
