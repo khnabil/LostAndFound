@@ -3,44 +3,73 @@
 <head>
     <meta charset="UTF-8">
     <title>Lost and Found - Home</title>
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <style>
         body {
             margin: 0;
             font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
-            background-image: url('/static/images/home_bg.jpg'); /* Update image if needed */
+            background-image: url('/static/images/home_bg.jpg');
             background-size: cover;
             background-repeat: no-repeat;
             background-position: center;
             color: white;
         }
+
         .navbar {
             background-color: rgba(0, 0, 0, 0.8);
             padding: 15px;
             display: flex;
             justify-content: space-between;
             align-items: center;
+            flex-wrap: wrap;
         }
+
         .navbar h1 {
             margin: 0;
             font-size: 24px;
         }
+
+        .navbar-links {
+            display: flex;
+            flex-wrap: wrap;
+            align-items: center;
+        }
+
         .navbar a {
             color: white;
             text-decoration: none;
             margin-left: 15px;
             font-weight: bold;
         }
+
+        .menu-toggle {
+            display: none;
+            flex-direction: column;
+            cursor: pointer;
+        }
+
+        .menu-toggle span {
+            height: 3px;
+            width: 25px;
+            background: white;
+            margin: 4px 0;
+            transition: 0.4s;
+        }
+
         .content {
             text-align: center;
             margin-top: 100px;
         }
+
         .content h2 {
             font-size: 36px;
             margin-bottom: 20px;
         }
+
         .content p {
             font-size: 18px;
         }
+
         .btn {
             background-color: #4CAF50;
             padding: 12px 24px;
@@ -51,21 +80,47 @@
             cursor: pointer;
             font-size: 16px;
         }
+
         .btn:hover {
             background-color: #45a049;
+        }
+
+        @media (max-width: 768px) {
+            .navbar-links {
+                display: none;
+                width: 100%;
+                flex-direction: column;
+                margin-top: 10px;
+            }
+
+            .navbar-links a {
+                margin: 10px 0;
+            }
+
+            .menu-toggle {
+                display: flex;
+            }
+
+            .navbar-links.active {
+                display: flex;
+            }
         }
     </style>
 </head>
 <body>
     <div class="navbar">
         <h1>Lost & Found Portal</h1>
-        <div method="post" action="{% url 'logout' %}>
-            {% csrf_token %}
+        <div class="menu-toggle" onclick="toggleMenu()">
+            <span></span>
+            <span></span>
+            <span></span>
+        </div>
+        <div class="navbar-links" id="navbarLinks">
             <a href="{% url 'home' %}">Home</a>
             <a href="#">Lost Items</a>
             <a href="#">Found Items</a>
             <a href="{% url 'my_profile' %}">My Profile</a>
-            <a href="/logout/">Logout</a>
+            <a href="{% url 'logout' %}">Logout</a>
         </div>
     </div>
 
@@ -74,5 +129,12 @@
         <p>Start by reporting a lost item or checking what's been found on campus.</p>
         <a href="#"><button class="btn">Report an Item</button></a>
     </div>
+
+    <script>
+        function toggleMenu() {
+            const links = document.getElementById('navbarLinks');
+            links.classList.toggle('active');
+        }
+    </script>
 </body>
 </html>

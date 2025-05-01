@@ -1,110 +1,33 @@
-from django.shortcuts import render, redirect
+from django.shortcuts import render, redirect, get_object_or_404
+from django.db.models import Count
+from .models import User, LostItem, FoundItem, Comment, Upvote
 
-from .models import Student, Faculty, Administrator, LostItem, FoundItem
 
-
-from django.http import HttpResponse
-
-# Create your views here.
-
-# def login_view(request):
-#     if request.method == 'POST':
-#         user_type = request.POST.get('user_type')
-#         user_id = request.POST.get('user_id')
-#         password = request.POST.get("password")
-#         user = None
-
-#         if user_type=="Student":
-#             user = Student.objects.filter(user_id=user_id, password=password).first()
-#         elif user_type == "Faculty":
-#             user = Faculty.objects.filter(user_id=user_id, password=password).first()
-#         elif user_type == "Administrator":
-#             user = Administrator.objects.filter(user_id=user_id, password=password).first()
-
-#         if user:
-#             request.session['user_name'] = user.name
-
-#             return redirect('home')
-#         else:
-#             return render(request, 'login.html', {'error': 'please fill all fields'})
-#     return render(request, 'login.html')
-
+# ------------------- LOGIN VIEW -------------------
 def login_view(request):
     if request.method == 'POST':
         user_id = request.POST.get('user_id')
         password = request.POST.get('password')
 
-        user = None
-        user_type = None
-
-        # Check in Student table
         try:
-            user = Student.objects.get(user_id=user_id, password=password)
-            user_type = 'Student'
-        except Student.DoesNotExist:
-            pass
-
-        # Check in Faculty table
-        if not user:
-            try:
-                user = Faculty.objects.get(user_id=user_id, password=password)
-                user_type = 'Faculty'
-            except Faculty.DoesNotExist:
-                pass
-
-        # Check in Administrator table
-        if not user:
-            try:
-                user = Administrator.objects.get(user_id=user_id, password=password)
-                user_type = 'Administrator'
-            except Administrator.DoesNotExist:
-                pass
-
-        # If user is found in any table
-        if user:
+            user = User.objects.get(user_id=user_id, password=password)
             request.session['user_id'] = user.user_id
             request.session['user_name'] = user.name
-            request.session['user_type'] = user_type
-            return redirect('home')  # Redirect to home page
-        else:
+            request.session['user_type'] = user.get_user_type_display()
+            return redirect('home')
+        except User.DoesNotExist:
             return render(request, 'login.html', {'error': 'No user data found. Please try again.'})
 
     return render(request, 'login.html')
 
 
-def home_view(request):
-    if 'user_name' in request.session:
-        return render(request, 'home.html', {'name': request.session['user_name']})
-    else:
-        return redirect('login') 
+# ------------------- LOGOUT -------------------
+def logout_view(request):
+    request.session.flush()
+    return redirect('login')
 
-# def home_view(request):
-#     return HttpResponse("""
-#         <html>
-#         <head>
-#             <title>Home</title>
-#             <style>
-#                 body {
-#                     margin: 0;
-#                     padding: 0;
-#                     display: flex;
-#                     justify-content: center;
-#                     align-items: center;
-#                     height: 100vh;
-#                     background-color: #f9f9f9;
-#                     font-family: Arial, sans-serif;
-#                 }
-#                 h1 {
-#                     color: #333;
-#                 }
-#             </style>
-#         </head>
-#         <body>
-#             <h1>Welcome to the Lost And Found Home Page!</h1>
-#         </body>
-#         </html>
-#     """)
 
+# ------------------- CREATE ACCOUNT -------------------
 def create_account_view(request):
     if request.method == "POST":
         user_type = request.POST.get("user_type")
@@ -114,59 +37,106 @@ def create_account_view(request):
         email = request.POST.get("email")
         password = request.POST.get("password")
 
-        if user_type == "student":
-            Student.objects.create(user_id=user_id, name=name, department=department, email=email, password=password)
-        elif user_type == "faculty":
-            Faculty.objects.create(user_id=user_id, name=name, department=department, email=email, password=password)
-        elif user_type == "administrator":
-            Administrator.objects.create(user_id=user_id, name=name, department=department, email=email, password=password)
+        user_type_map = {
+            "administrator": 1,
+            "faculty": 2,
+            "student": 3,
+        }
 
-        return redirect('login')
+        if user_type in user_type_map:
+            User.objects.create(
+                user_id=user_id,
+                name=name,
+                department=department,
+                email=email,
+                password=password,
+                user_type=user_type_map[user_type]
+            )
+            return redirect('login')
+        else:
+            return render(request, 'create_account.html', {'error': 'Invalid user type selected.'})
 
     return render(request, 'create_account.html')
 
 
-def logout_view(request):
-    request.session.flush()
-    return redirect('login')
-
-
-
+# ------------------- PROFILE -------------------
 def my_profile_view(request):
     user_id = request.session.get('user_id')
-    name = request.session.get('user_name')
-    user_type = request.session.get('user_type')
+    if not user_id:
+        return redirect('login')
 
-    # Determine user model
-    if user_type == "Student":
-        from .models import Student as UserModel
-    elif user_type == "Faculty":
-        from .models import Faculty as UserModel
-    elif user_type == "Administrator":
-        from .models import Administrator as UserModel
+    user = get_object_or_404(User, user_id=user_id)
 
-    user = UserModel.objects.get(user_id=user_id)
-
-    # Fetch posts
-    from .models import LostItem, FoundItem
     lost_posts = LostItem.objects.filter(posted_by_id=user_id)
     found_posts = FoundItem.objects.filter(posted_by_id=user_id)
+
+    user_type_map = {
+        1: "Administrator",
+        2: "Faculty",
+        3: "Student"
+    }
 
     context = {
         "user_id": user.user_id,
         "name": user.name,
         "email": user.email,
         "department": user.department,
-        "user_type": user_type,
+        "user_type": user_type_map.get(user.user_type, "Unknown"),
         "total_posts": lost_posts.count() + found_posts.count(),
         "lost_count": lost_posts.count(),
         "found_count": found_posts.count(),
         "lost_posts": lost_posts,
         "found_posts": found_posts
     }
-
     return render(request, 'my_profile.html', context)
 
-def home_view(request):
-    return render(request, 'home.html')
 
+# ------------------- HOME PAGE (FEED) -------------------
+def home_view(request):
+    user_id = request.session.get('user_id')
+    if not user_id:
+        return redirect('login')
+
+    user = get_object_or_404(User, user_id=user_id)
+
+    # Order by upvotes first, then most recent using item_id
+    items = LostItem.objects.annotate(upvote_count=Count('upvote')).order_by('-upvote_count', '-item_id')
+
+    # Fetch all comments and group by item_id
+    comments = Comment.objects.select_related('user', 'item')
+    comment_map = {}
+    for comment in comments:
+        comment_map.setdefault(comment.item.item_id, []).append(comment)
+
+    context = {
+        'items': items,
+        'comment_map': comment_map,
+        'user': user
+    }
+    return render(request, 'home.html', context)
+
+
+# ------------------- COMMENT POSTING -------------------
+def post_comment(request, item_id):
+    if request.method == "POST":
+        user_id = request.session.get('user_id')
+        user = get_object_or_404(User, user_id=user_id)
+        item = get_object_or_404(LostItem, item_id=item_id)
+        content = request.POST.get('content')
+
+        if content:
+            Comment.objects.create(user=user, item=item, content=content)
+
+    return redirect('home')
+
+
+# ------------------- UPVOTE HANDLING -------------------
+def upvote_post(request, item_id):
+    user_id = request.session.get('user_id')
+    user = get_object_or_404(User, user_id=user_id)
+    item = get_object_or_404(LostItem, item_id=item_id)
+
+    if not Upvote.objects.filter(user=user, item=item).exists():
+        Upvote.objects.create(user=user, item=item)
+
+    return redirect('home')

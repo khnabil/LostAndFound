@@ -1,36 +1,22 @@
 from django.db import models
 
-class Student(models.Model):
+class User(models.Model):
+    USER_TYPE_CHOICES = (
+        (1, 'Administrator'),
+        (2, 'Faculty'),
+        (3, 'Student'),
+    )
+
     user_id = models.CharField(max_length=100, unique=True)
-    department = models.CharField(max_length=100)
     name = models.CharField(max_length=100)
     email = models.EmailField()
     password = models.CharField(max_length=128)
-
-    def __str__(self):
-        return f"{self.name} ({self.user_id})"
-
-
-class Faculty(models.Model):
-    user_id = models.CharField(max_length=100, unique=True)
     department = models.CharField(max_length=100)
-    name = models.CharField(max_length=100)
-    email = models.EmailField()
-    password = models.CharField(max_length=128)
+    user_type = models.IntegerField(choices=USER_TYPE_CHOICES)
 
     def __str__(self):
-        return f"{self.name} ({self.user_id})"
+        return f"{self.name} ({self.get_user_type_display()})"
 
-
-class Administrator(models.Model):
-    user_id = models.CharField(max_length=100, unique=True)
-    department = models.CharField(max_length=100)
-    name = models.CharField(max_length=100)
-    email = models.EmailField()
-    password = models.CharField(max_length=128)
-
-    def __str__(self):
-        return f"{self.name} ({self.user_id})"
 
 
 class LostItem(models.Model):
@@ -65,3 +51,17 @@ class LostItemImage(models.Model):
 
     def __str__(self):
         return f"Image for {self.lost_item.name}"
+
+class Comment(models.Model):
+    user = models.ForeignKey(User, on_delete=models.CASCADE)
+    item = models.ForeignKey('LostItem', on_delete=models.CASCADE)  # or a generic Item model if unified
+    content = models.TextField()
+    created_at = models.DateTimeField(auto_now_add=True)
+
+class Upvote(models.Model):
+    user = models.ForeignKey(User, on_delete=models.CASCADE)
+    item = models.ForeignKey('LostItem', on_delete=models.CASCADE)
+    created_at = models.DateTimeField(auto_now_add=True)
+
+    class Meta:
+        unique_together = ('user', 'item')  # Prevent duplicate upvotes
