@@ -7,6 +7,6 @@ urlpatterns = [
     path('create-account/', views.create_account_view, name='create_account'),
     path('logout/', views.logout_view, name='logout'),
     path('my-profile/', views.my_profile_view, name='my_profile'),
-    path('comment/<int:item_id>/', views.post_comment, name='post_comment'),
-    path('upvote/<int:item_id>/', views.upvote_post, name='upvote_post'),
+    path('post/', views.post_list_view, name='post_list'),
+    path('post/new/', views.create_found_item_view, name='create_found_item'),
 ]

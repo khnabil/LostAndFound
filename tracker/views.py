@@ -1,6 +1,8 @@
 from django.shortcuts import render, redirect, get_object_or_404
 from django.db.models import Count
-from .models import User, LostItem, FoundItem, Comment, Upvote
+from .models import User, Item, ItemImage
+from django.contrib.auth.hashers import make_password
+from .forms import ItemForm, MultiImageForm
 
 
 # ------------------- LOGIN VIEW -------------------
@@ -35,8 +37,7 @@ def create_account_view(request):
         name = request.POST.get("name")
         department = request.POST.get("department")
         email = request.POST.get("email")
-        password = request.POST.get("password")
-
+        password = make_password(request.POST.get("password"))
         user_type_map = {
             "administrator": 1,
             "faculty": 2,
@@ -66,10 +67,9 @@ def my_profile_view(request):
         return redirect('login')
 
     user = get_object_or_404(User, user_id=user_id)
-
-    lost_posts = LostItem.objects.filter(posted_by_id=user_id)
-    found_posts = FoundItem.objects.filter(posted_by_id=user_id)
-
+    user_items = Item.objects.filter(posted_by_id=user_id)
+    lost_posts = user_items.filter(is_found=False)
+    found_posts = user_items.filter(is_found=True)
     user_type_map = {
         1: "Administrator",
         2: "Faculty",
@@ -77,66 +77,69 @@ def my_profile_view(request):
     }
 
     context = {
-        "user_id": user.user_id,
-        "name": user.name,
-        "email": user.email,
-        "department": user.department,
-        "user_type": user_type_map.get(user.user_type, "Unknown"),
-        "total_posts": lost_posts.count() + found_posts.count(),
-        "lost_count": lost_posts.count(),
-        "found_count": found_posts.count(),
-        "lost_posts": lost_posts,
-        "found_posts": found_posts
+    "user_id": user.user_id,
+    "name": user.name,
+    "email": user.email,
+    "department": user.department,
+    "user_type": user_type_map.get(user.user_type, "Unknown"),
+    "total_posts": user_items.count(),
+    "lost_count": lost_posts.count(),
+    "found_count": found_posts.count(),
+    "lost_posts": lost_posts,
+    "found_posts": found_posts
     }
+
     return render(request, 'my_profile.html', context)
 
 
 # ------------------- HOME PAGE (FEED) -------------------
+
 def home_view(request):
-    user_id = request.session.get('user_id')
-    if not user_id:
-        return redirect('login')
+    return render(request, 'home.html')
 
-    user = get_object_or_404(User, user_id=user_id)
-
-    # Order by upvotes first, then most recent using item_id
-    items = LostItem.objects.annotate(upvote_count=Count('upvote')).order_by('-upvote_count', '-item_id')
-
-    # Fetch all comments and group by item_id
-    comments = Comment.objects.select_related('user', 'item')
-    comment_map = {}
-    for comment in comments:
-        comment_map.setdefault(comment.item.item_id, []).append(comment)
-
-    context = {
-        'items': items,
-        'comment_map': comment_map,
-        'user': user
-    }
-    return render(request, 'home.html', context)
+def post_list_view(request):
+    posts = Item.objects.filter(is_found=True).order_by('-item_id')
+    return render(request, 'post_list.html', {'posts': posts})
 
 
-# ------------------- COMMENT POSTING -------------------
-def post_comment(request, item_id):
-    if request.method == "POST":
-        user_id = request.session.get('user_id')
-        user = get_object_or_404(User, user_id=user_id)
-        item = get_object_or_404(LostItem, item_id=item_id)
-        content = request.POST.get('content')
+def create_found_item_view(request):
+    if request.method == 'POST':
+        form = FoundItemOnlyForm(request.POST, request.FILES)
+        if form.is_valid():
+            item = form.save(commit=False)
+            item.posted_by_id = request.session.get('user_id')
+            item.posted_by_name = request.session.get('user_name')
+            item.is_found = True  # Enforce found flag
+            item.save()
+            return redirect('post_list')
+    else:
+        form = FoundItemOnlyForm()
+    return render(request, 'create_post.html', {'form': form})
 
-        if content:
-            Comment.objects.create(user=user, item=item, content=content)
-
-    return redirect('home')
 
 
-# ------------------- UPVOTE HANDLING -------------------
-def upvote_post(request, item_id):
-    user_id = request.session.get('user_id')
-    user = get_object_or_404(User, user_id=user_id)
-    item = get_object_or_404(LostItem, item_id=item_id)
+def create_item_view(request):
+    if request.method == 'POST':
+        item_form = ItemForm(request.POST)
+        image_form = MultiImageForm(request.POST, request.FILES)
 
-    if not Upvote.objects.filter(user=user, item=item).exists():
-        Upvote.objects.create(user=user, item=item)
+        if item_form.is_valid() and image_form.is_valid():
+            item = item_form.save(commit=False)
+            item.posted_by_id = request.session.get('user_id')
+            item.posted_by_name = request.session.get('user_name')
+            item.save()
 
-    return redirect('home')
+            # Handle multiple image uploads
+            images = request.FILES.getlist('images')
+            for image in images:
+                ItemImage.objects.create(item=item, image=image)
+
+            return redirect('post_list')
+    else:
+        item_form = ItemForm()
+        image_form = MultiImageForm()
+
+    return render(request, 'create_post.html', {
+        'item_form': item_form,
+        'image_form': image_form
+    })

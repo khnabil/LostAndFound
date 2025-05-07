@@ -1,9 +1,11 @@
+{% load static %}
 <!DOCTYPE html>
 <html lang="en">
 <head>
     <meta charset="UTF-8">
-    <title>Lost and Found - Home</title>
+    <title>All Posts - Found Items</title>
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <link rel="stylesheet" href="{% static 'css/styles.css' %}">
     <style>
         body {
             margin: 0;
@@ -55,56 +57,38 @@
             margin: 4px 0;
             transition: 0.4s;
         }
-
-        .content {
-            text-align: center;
-            margin-top: 100px;
-            color: black;
-        }
-
-        .content h2 {
-            font-size: 36px;
-            margin-bottom: 20px;
-        }
-
-        .content p {
-            font-size: 18px;
+        .container {
+            max-width: 800px;
+            margin: auto;
+            padding: 20px;
         }
 
         .btn {
-            background-color: #4CAF50;
-            padding: 12px 24px;
+            background-color: #4267B2;
             color: white;
+            padding: 10px 20px;
+            text-decoration: none;
             border: none;
             border-radius: 6px;
-            margin-top: 20px;
+            font-weight: bold;
             cursor: pointer;
-            font-size: 16px;
         }
 
         .btn:hover {
-            background-color: #45a049;
+            background-color: #365899;
         }
 
-        @media (max-width: 768px) {
-            .navbar-links {
-                display: none;
-                width: 100%;
-                flex-direction: column;
-                margin-top: 10px;
-            }
+        .post-card {
+            background: white;
+            color: black;
+            border-radius: 10px;
+            padding: 20px;
+            margin-top: 20px;
+            box-shadow: 0 4px 10px rgba(0, 0, 0, 0.2);
+        }
 
-            .navbar-links a {
-                margin: 10px 0;
-            }
-
-            .menu-toggle {
-                display: flex;
-            }
-
-            .navbar-links.active {
-                display: flex;
-            }
+        h2 {
+            text-align: center;
         }
     </style>
 </head>
@@ -123,19 +107,23 @@
             <a href="{% url 'logout' %}">Logout</a>
         </div>
     </div>
+    <div class="container">
+        <h2>Found Item Posts</h2>
+        <div style="text-align: right;">
+            <a href="{% url 'create_found_item' %}" class="btn">+ Create New Post</a>
+        </div>
 
-    <div class="content">
-        <h2>Welcome {{ name }}!</h2>
-        <p>Start by reporting a lost item or checking what's been found on campus.</p>
+        {% for post in posts %}
+            <div class="post-card">
+                <h3>{{ post.name }}</h3>
+                <p><strong>Description:</strong> {{ post.description }}</p>
+                <p><strong>Location:</strong> {{ post.location }}</p>
+                <p><strong>Date Found:</strong> {{ post.date_found }}</p>
+                <p><strong>Posted By:</strong> {{ post.posted_by_name }}</p>
+            </div>
+        {% empty %}
+            <p style="text-align: center;">No posts found.</p>
+        {% endfor %}
     </div>
-
-
-
-    <script>
-        function toggleMenu() {
-            const links = document.getElementById('navbarLinks');
-            links.classList.toggle('active');
-        }
-    </script>
 </body>
 </html>

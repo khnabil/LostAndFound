@@ -1,0 +1,17 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>Create New Post</title>
+</head>
+<body>
+    <h2>Create New Item Post</h2>
+    <form method="post" enctype="multipart/form-data">
+        {% csrf_token %}
+        {{ item_form.as_p }}
+        <label>Upload Images:</label>
+        {{ image_form.images }}
+        <br><br>
+        <button type="submit">Post</button>
+    </form>
+</body>
+</html>

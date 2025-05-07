@@ -19,49 +19,27 @@ class User(models.Model):
 
 
 
-class LostItem(models.Model):
+from django.db import models
+
+class Item(models.Model):
     item_id = models.AutoField(primary_key=True)
     name = models.CharField(max_length=255)
     description = models.TextField()
-    date_lost = models.DateField()
+    date_reported = models.DateField()
     location = models.CharField(max_length=255)
     posted_by_id = models.CharField(max_length=20)
     posted_by_name = models.CharField(max_length=255)
+    is_found = models.BooleanField(default=False)  # False = lost, True = found
 
     def __str__(self):
-        return f"{self.name} (Lost by {self.posted_by_name})"
+        status = "Found" if self.is_found else "Lost"
+        return f"{self.name} ({status} by {self.posted_by_name})"
 
 
-class FoundItem(models.Model):
-    item_id = models.AutoField(primary_key=True)
-    name = models.CharField(max_length=255)
-    description = models.TextField()
-    date_found = models.DateField()
-    location = models.CharField(max_length=255)
-    posted_by_id = models.CharField(max_length=20)
-    posted_by_name = models.CharField(max_length=255)
+class ItemImage(models.Model):
+    item = models.ForeignKey(Item, on_delete=models.CASCADE, related_name='images')
+    image = models.ImageField(upload_to='items/')
 
     def __str__(self):
-        return f"{self.name} (Found by {self.posted_by_name})"
+        return f"Image for {self.item.name}"
 
-
-class LostItemImage(models.Model):
-    lost_item = models.ForeignKey(LostItem, on_delete=models.CASCADE, related_name='images')
-    image = models.ImageField(upload_to='lost_items/')
-
-    def __str__(self):
-        return f"Image for {self.lost_item.name}"
-
-class Comment(models.Model):
-    user = models.ForeignKey(User, on_delete=models.CASCADE)
-    item = models.ForeignKey('LostItem', on_delete=models.CASCADE)  # or a generic Item model if unified
-    content = models.TextField()
-    created_at = models.DateTimeField(auto_now_add=True)
-
-class Upvote(models.Model):
-    user = models.ForeignKey(User, on_delete=models.CASCADE)
-    item = models.ForeignKey('LostItem', on_delete=models.CASCADE)
-    created_at = models.DateTimeField(auto_now_add=True)
-
-    class Meta:
-        unique_together = ('user', 'item')  # Prevent duplicate upvotes
