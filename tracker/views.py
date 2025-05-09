@@ -6,8 +6,9 @@ from .forms import ItemForm, ItemImageForm, CommentForm
 from django.views.decorators.cache import never_cache
 from django.views.decorators.csrf import csrf_exempt
 from django.http import JsonResponse
+from django.views.decorators.http import require_POST
 import json
-
+from django.contrib import messages
 
 # ------------------- LOGIN VIEW -------------------
 @never_cache
@@ -77,26 +78,24 @@ def my_profile_view(request):
     user_items = Item.objects.filter(posted_by_id=user_id)
     lost_posts = user_items.filter(is_found=False)
     found_posts = user_items.filter(is_found=True)
-    user_type_map = {
-        1: "Administrator",
-        2: "Faculty",
-        3: "Student"
-    }
+    claimed_posts = user_items.filter(is_found=True, claim_image__isnull=False)
 
     context = {
-    "user_id": user.user_id,
-    "name": user.name,
-    "email": user.email,
-    "department": user.department,
-    "user_type": user_type_map.get(user.user_type, "Unknown"),
-    "total_posts": user_items.count(),
-    "lost_count": lost_posts.count(),
-    "found_count": found_posts.count(),
-    "lost_posts": lost_posts,
-    "found_posts": found_posts
+        "user_id": user.user_id,
+        "name": user.name,
+        "email": user.email,
+        "department": user.department,
+        "user_type": {1: "Administrator", 2: "Faculty", 3: "Student"}.get(user.user_type, "Unknown"),
+        "total_posts": user_items.count(),
+        "lost_count": lost_posts.count(),
+        "found_count": found_posts.count(),
+        "lost_posts": lost_posts,
+        "found_posts": found_posts,
+        "claimed_posts": claimed_posts
     }
 
     return render(request, 'my_profile.html', context)
+
 
 
 # ------------------- HOME PAGE (FEED) -------------------
@@ -160,20 +159,6 @@ def post_list_view(request):
     return render(request, 'post_list.html', {'posts': posts})
 
 
-# def create_found_item_view(request):
-#     if request.method == 'POST':
-#         form = FoundItemOnlyForm(request.POST, request.FILES)
-#         if form.is_valid():
-#             item = form.save(commit=False)
-#             item.posted_by_id = request.session.get('user_id')
-#             item.posted_by_name = request.session.get('user_name')
-#             item.is_found = True  # Enforce found flag
-#             item.save()
-#             return redirect('post_list')
-#     else:
-#         form = FoundItemOnlyForm()
-#     return render(request, 'create_post.html', {'form': form})
-
 @never_cache
 def create_item_view(request):
     if request.method == 'POST':
@@ -199,3 +184,49 @@ def create_item_view(request):
         'item_form': item_form,
         'image_form': image_form
     })
+
+@csrf_exempt
+def send_claim_request(request):
+    if request.method == 'POST' and request.headers.get('x-requested-with') == 'XMLHttpRequest':
+        data = json.loads(request.body)
+        item_id = data.get('item_id')
+        user_name = request.session.get('user_name')
+
+        # You can create a Claim model later, for now just simulate
+        print(f"{user_name} is claiming item {item_id}")
+
+        return JsonResponse({'message': 'Claim request submitted successfully!'})
+
+    return JsonResponse({'error': 'Invalid request'}, status=400)
+
+def claim_item_view(request, item_id):
+    item = get_object_or_404(Item, pk=item_id)
+
+    if item.is_found:
+        return JsonResponse({'success': False, 'message': 'This item has already been claimed.'})
+
+    if request.method == 'POST':
+        image = request.FILES.get('claim_image')
+        if image:
+            item.claim_image = image
+            item.is_found = True
+            item.claimer_name = request.session.get('user_name')
+            item.claimer_id = request.session.get('user_id')
+            item.save()
+            return JsonResponse({'success': True, 'message': 'Claim submitted successfully.'})
+        return JsonResponse({'success': False, 'message': 'Please upload an image.'})
+
+    return JsonResponse({'success': False, 'message': 'Invalid request.'})
+
+@require_POST
+def delete_claimed_item(request, item_id):
+    user_id = request.session.get('user_id')
+    item = get_object_or_404(Item, pk=item_id)
+
+    # Ensure only the poster can delete
+    if item.posted_by_id != user_id:
+        return JsonResponse({'success': False, 'message': 'Unauthorized'}, status=403)
+
+    item.delete()
+    messages.success(request, "Claimed item deleted successfully.")
+    return JsonResponse({'success': True})

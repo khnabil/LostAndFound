@@ -154,23 +154,69 @@
             display: block;
             background-color: #f0f0f0;
         }
-        
-
-        .btn {
-            background-color: #4CAF50;
-            padding: 12px 24px;
-            color: white;
-            border: none;
-            border-radius: 6px;
-            margin-top: 20px;
+        .modal {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background-color: rgba(0,0,0,0.6);
+            display: none;
+            justify-content: center;
+            align-items: center;
+            z-index: 9999;
+        }
+        .modal-content {
+            background-color: #fff;
+            padding: 30px 25px;
+            border-radius: 12px;
+            width: 90%;
+            max-width: 400px;
+            box-shadow: 0 4px 20px rgba(0, 0, 0, 0.3);
+            position: relative;
+            text-align: center;
+            animation: slideDown 0.3s ease-out;
+        }
+        .close {
+            position: absolute;
+            top: 12px;
+            right: 16px;
+            font-size: 24px;
+            color: #aaa;
             cursor: pointer;
+            transition: color 0.3s ease;
+        }
+        .close:hover {
+            color: #333;
+        }
+        #claimForm input[type="file"] {
+            display: block;
+            width: 100%;
+            margin: 20px 0;
+            padding: 10px;
+            border: 1px solid #ccc;
+            border-radius: 8px;
+            font-size: 15px;
+            background-color: #f9f9f9;
+        }
+
+        #claimForm button {
+            background-color: #28a745;
+            color: white;
+            padding: 10px 20px;
+            border: none;
             font-size: 16px;
+            border-radius: 8px;
+            cursor: pointer;
+            transition: background-color 0.3s ease;
         }
-
-        .btn:hover {
-            background-color: #45a049;
+        #claimForm button:hover {
+            background-color: #218838;
         }
-
+        @keyframes slideDown {
+            from { transform: translateY(-20px); opacity: 0; }
+            to { transform: translateY(0); opacity: 1; }
+        }
         @media (max-width: 768px) {
             .navbar-links {
                 display: none;
@@ -236,10 +282,48 @@
 
     <textarea id="comment-text-{{ item.item_id }}" rows="2" placeholder="Write a comment..." style="width: 100%; margin-top: 10px;"></textarea>
     <button onclick="postComment({{ item.item_id }})" style="margin-top: 5px;">Post Comment</button>
+    {% comment %} <button class="claim_btn" onclick="sendClaim({{ item.item_id }})" style="background-color: #28a745;">Claim</button> {% endcomment %}
+    {% comment %} <button onclick="sendClaim({{ item.item_id }})" style="background-color: #28a745;">Claim</button> {% endcomment %}
+    <div style="margin-top: 10px;">
+    {% if item.is_found %}
+        <span style="
+            display: inline-block;
+            background-color: #28a745;
+            color: white;
+            padding: 6px 12px;
+            border-radius: 6px;
+            font-weight: bold;
+        ">
+            ✅ Item Claimed
+        </span>
+    {% else %}
+        <button onclick="sendClaim({{ item.item_id }})" style="background-color: #28a745;">Claim</button>
+    {% endif %}
+    </div>
+
 </div>
 
 </div>
 {% endfor %}
+{% if item.is_found %}
+    <p style="color: green; font-weight: bold;">✅ This item has been claimed.</p>
+{% endif %}
+
+
+<div id="claimModal" class="modal">
+    <div class="modal-content">
+        <span class="close" onclick="closeModal()">&times;</span>
+        <h3 style="color:rgb(0, 0, 0);">Claim This Item</h3>
+        <p style="color:rgb(0, 0, 0);">Please upload a photo as proof of ownership.</p>
+        <form id="claimForm" enctype="multipart/form-data">
+            <input type="file" name="claim_image" id="claim_image" required>
+            <input type="hidden" name="item_id" id="claim_item_id">
+            <button type="submit">Submit Claim</button>
+        </form>
+    </div>
+</div>
+
+
 
     
 
@@ -251,35 +335,68 @@
             links.classList.toggle('active');
         }
         function postComment(itemId) {
-    const textArea = document.getElementById(`comment-text-${itemId}`);
-    const text = textArea.value.trim();
-    if (!text) return;
+            const textArea = document.getElementById(`comment-text-${itemId}`);
+            const text = textArea.value.trim();
+            if (!text) return;
 
-    fetch("{% url 'post_comment_ajax' %}", {
-        method: 'POST',
-        headers: {
-            'Content-Type': 'application/json',
-            'X-Requested-With': 'XMLHttpRequest',
-            'X-CSRFToken': '{{ csrf_token }}'
-        },
-        body: JSON.stringify({
-            item_id: itemId,
-            text: text
-        })
-    })
-    .then(response => response.json())
-    .then(data => {
-        if (data.text) {
-            const commentBox = document.getElementById(`comments-${itemId}`);
-            const newComment = document.createElement("div");
-            newComment.className = "comment";
-            newComment.innerHTML = `<strong>${data.user_name}</strong>: ${data.text}<br><small>${data.created_at}</small>`;
-            commentBox.prepend(newComment);
-            textArea.value = "";
+            fetch("{% url 'post_comment_ajax' %}", {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json',
+                    'X-Requested-With': 'XMLHttpRequest',
+                    'X-CSRFToken': '{{ csrf_token }}'
+                },
+                body: JSON.stringify({
+                    item_id: itemId,
+                    text: text
+                })
+            })
+            .then(response => response.json())
+            .then(data => {
+                if (data.text) {
+                    const commentBox = document.getElementById(`comments-${itemId}`);
+                    const newComment = document.createElement("div");
+                    newComment.className = "comment";
+                    newComment.innerHTML = `<strong>${data.user_name}</strong>: ${data.text}<br><small>${data.created_at}</small>`;
+                    commentBox.prepend(newComment);
+                    textArea.value = "";
+                }
+            })
+            .catch(error => console.error("Error:", error));
         }
-    })
-    .catch(error => console.error("Error:", error));
-}
+        let currentItemId = null;
+
+        function sendClaim(itemId) {
+            currentItemId = itemId;
+            document.getElementById('claim_item_id').value = itemId;
+            document.getElementById('claimModal').style.display = 'flex';
+        }
+
+        function closeModal() {
+            document.getElementById('claimModal').style.display = 'none';
+            }
+
+            document.getElementById('claimForm').addEventListener('submit', function(e) {
+                e.preventDefault();
+                const form = e.target;
+                const formData = new FormData(form);
+                fetch(`/claim-item/${currentItemId}/`, {
+                    method: 'POST',
+                    headers: {
+                        'X-CSRFToken': '{{ csrf_token }}',
+                    },
+                    body: formData
+                })
+                .then(res => res.json())
+                .then(data => {
+                    alert(data.message);
+                    if (data.success) {
+                        closeModal();
+                        window.location.reload();
+                    }
+                })
+                .catch(err => console.error(err));
+            });
     </script>
 </body>
 </html>

@@ -29,8 +29,10 @@ class Item(models.Model):
     location = models.CharField(max_length=255)
     posted_by_id = models.CharField(max_length=20)
     posted_by_name = models.CharField(max_length=255)
-    is_found = models.BooleanField(default=False)  # False = lost, True = found
-
+    is_found = models.BooleanField(default=False)
+    claim_image = models.ImageField(upload_to='claims/', null=True, blank=True)
+    claimer_name = models.CharField(max_length=100, null=True, blank=True)
+    claimer_id = models.CharField(max_length=100, null=True, blank=True)
     def __str__(self):
         status = "Found" if self.is_found else "Lost"
         return f"{self.name} ({status} by {self.posted_by_name})"
