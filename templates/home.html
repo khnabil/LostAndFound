@@ -62,14 +62,39 @@
             color: black;
         }
 
-        .content h2 {
+        {% comment %} .content h2 {
             font-size: 36px;
             margin-bottom: 20px;
-        }
+        } {% endcomment %}
 
         .content p {
             font-size: 18px;
         }
+        .feed-container {
+            max-width: 900px;
+            margin: 20px auto;
+            padding: 20px;
+        }
+        
+        .post-card {
+            background-color: white;
+            color: black;
+            border-radius: 10px;
+            padding: 20px;
+            margin-bottom: 20px;
+            box-shadow: 0 4px 12px rgba(0, 0, 0, 0.2);
+        }
+        
+        .post-card img {
+            width: 100%;
+            max-height: 400px;
+            object-fit: contain;
+            border-radius: 8px;
+            margin-bottom: 15px;
+            display: block;
+            background-color: #f0f0f0;
+        }
+        
 
         .btn {
             background-color: #4CAF50;
@@ -124,10 +149,25 @@
         </div>
     </div>
 
-    <div class="content">
-        <h2>Welcome {{ name }}!</h2>
-        <p>Start by reporting a lost item or checking what's been found on campus.</p>
+    <div class="feed-container">
+        <h2 style="text-align: center; margin-top: 20px;">All Posts</h2>
+    
+        {% for item in items %}
+        <div class="post-card">
+            {% if item.image %}
+                <img src="{{ item.image.image.url }}" alt="Item Image">
+            {% endif %}
+            <h3>{{ item.name }}</h3>
+            <p><strong>Description:</strong> {{ item.description }}</p>
+            <p><strong>Location:</strong> {{ item.location }}</p>
+            <p><strong>Date Reported:</strong> {{ item.date_reported }}</p>
+            <p><strong>Posted By:</strong> {{ item.posted_by_name }}</p>
+        </div>
+        {% empty %}
+        <p style="text-align:center; color:white;">No posts available yet.</p>
+        {% endfor %}
     </div>
+    
 
 
 

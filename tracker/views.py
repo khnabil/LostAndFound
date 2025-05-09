@@ -2,10 +2,12 @@ from django.shortcuts import render, redirect, get_object_or_404
 from django.db.models import Count
 from .models import User, Item, ItemImage
 from django.contrib.auth.hashers import make_password
-from .forms import ItemForm, MultiImageForm
+from .forms import ItemForm, ItemImageForm
+from django.views.decorators.cache import never_cache
 
 
 # ------------------- LOGIN VIEW -------------------
+@never_cache
 def login_view(request):
     if request.method == 'POST':
         user_id = request.POST.get('user_id')
@@ -30,6 +32,7 @@ def logout_view(request):
 
 
 # ------------------- CREATE ACCOUNT -------------------
+@never_cache
 def create_account_view(request):
     if request.method == "POST":
         user_type = request.POST.get("user_type")
@@ -61,6 +64,7 @@ def create_account_view(request):
 
 
 # ------------------- PROFILE -------------------
+@never_cache
 def my_profile_view(request):
     user_id = request.session.get('user_id')
     if not user_id:
@@ -94,34 +98,45 @@ def my_profile_view(request):
 
 # ------------------- HOME PAGE (FEED) -------------------
 
+@never_cache
 def home_view(request):
-    return render(request, 'home.html')
+    if 'user_id' not in request.session:
+        return redirect('login')
 
+    items = Item.objects.select_related().prefetch_related('image').order_by('-item_id')
+
+    return render(request, 'home.html', {
+        'name': request.session.get('user_name'),
+        'items': items
+    })
+
+
+
+@never_cache
 def post_list_view(request):
     posts = Item.objects.filter(is_found=True).order_by('-item_id')
     return render(request, 'post_list.html', {'posts': posts})
 
 
-def create_found_item_view(request):
-    if request.method == 'POST':
-        form = FoundItemOnlyForm(request.POST, request.FILES)
-        if form.is_valid():
-            item = form.save(commit=False)
-            item.posted_by_id = request.session.get('user_id')
-            item.posted_by_name = request.session.get('user_name')
-            item.is_found = True  # Enforce found flag
-            item.save()
-            return redirect('post_list')
-    else:
-        form = FoundItemOnlyForm()
-    return render(request, 'create_post.html', {'form': form})
+# def create_found_item_view(request):
+#     if request.method == 'POST':
+#         form = FoundItemOnlyForm(request.POST, request.FILES)
+#         if form.is_valid():
+#             item = form.save(commit=False)
+#             item.posted_by_id = request.session.get('user_id')
+#             item.posted_by_name = request.session.get('user_name')
+#             item.is_found = True  # Enforce found flag
+#             item.save()
+#             return redirect('post_list')
+#     else:
+#         form = FoundItemOnlyForm()
+#     return render(request, 'create_post.html', {'form': form})
 
-
-
+@never_cache
 def create_item_view(request):
     if request.method == 'POST':
         item_form = ItemForm(request.POST)
-        image_form = MultiImageForm(request.POST, request.FILES)
+        image_form = ItemImageForm(request.POST, request.FILES)
 
         if item_form.is_valid() and image_form.is_valid():
             item = item_form.save(commit=False)
@@ -129,15 +144,14 @@ def create_item_view(request):
             item.posted_by_name = request.session.get('user_name')
             item.save()
 
-            # Handle multiple image uploads
-            images = request.FILES.getlist('images')
-            for image in images:
-                ItemImage.objects.create(item=item, image=image)
+            image = image_form.save(commit=False)
+            image.item = item
+            image.save()
 
             return redirect('post_list')
     else:
         item_form = ItemForm()
-        image_form = MultiImageForm()
+        image_form = ItemImageForm()
 
     return render(request, 'create_post.html', {
         'item_form': item_form,

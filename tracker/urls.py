@@ -8,7 +8,6 @@ urlpatterns = [
     path('logout/', views.logout_view, name='logout'),
     path('my-profile/', views.my_profile_view, name='my_profile'),
     path('post/', views.post_list_view, name='post_list'),
-    # path('post/new/', views.create_found_item_view, name='create_found_item'),
     path('post/new/', views.create_item_view, name='create_found_item'),
 
 ]

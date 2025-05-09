@@ -2,16 +2,89 @@
 <html>
 <head>
     <title>Create New Post</title>
+    <style>
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            background-color: #f4f4f4;
+            margin: 0;
+            padding: 0;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            min-height: 100vh;
+        }
+    
+        .form-wrapper {
+            background-color: #ffffff;
+            padding: 30px 40px;
+            border-radius: 12px;
+            box-shadow: 0 4px 15px rgba(0, 0, 0, 0.1);
+            width: 100%;
+            max-width: 600px;
+            text-align: center;
+        }
+    
+        h2 {
+            margin-bottom: 25px;
+            color: #333;
+        }
+    
+        form {
+            text-align: left;
+        }
+    
+        label {
+            font-weight: bold;
+            display: block;
+            margin-top: 15px;
+            margin-bottom: 5px;
+            color: #444;
+        }
+    
+        input[type="text"],
+        input[type="email"],
+        input[type="date"],
+        textarea,
+        select,
+        input[type="file"] {
+            width: 100%;
+            padding: 10px;
+            margin-bottom: 15px;
+            border: 1px solid #ccc;
+            border-radius: 6px;
+            box-sizing: border-box;
+            font-size: 15px;
+        }
+    
+        button {
+            width: 100%;
+            background-color: #4CAF50;
+            color: white;
+            padding: 12px;
+            font-size: 16px;
+            border: none;
+            border-radius: 6px;
+            cursor: pointer;
+            margin-top: 10px;
+        }
+    
+        button:hover {
+            background-color: #45a049;
+        }
+    </style>
+    
 </head>
 <body>
-    <h2>Create New Item Post</h2>
-    <form method="post" enctype="multipart/form-data">
-        {% csrf_token %}
-        {{ item_form.as_p }}
-        <label>Upload Images:</label>
-        {{ image_form.images }}
-        <br><br>
-        <button type="submit">Post</button>
-    </form>
+    <div class="form-wrapper">
+        <h2>Create New Item Post</h2>
+        <form method="post" enctype="multipart/form-data">
+            {% csrf_token %}
+            {{ item_form.as_p }}
+            <label>Upload Image:</label>
+            {{ image_form.image }}
+            <br><br>
+            <button type="submit">Post</button>
+        </form>
+    </div>
 </body>
 </html>

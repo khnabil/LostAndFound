@@ -19,7 +19,7 @@ class User(models.Model):
 
 
 
-from django.db import models
+
 
 class Item(models.Model):
     item_id = models.AutoField(primary_key=True)
@@ -37,9 +37,10 @@ class Item(models.Model):
 
 
 class ItemImage(models.Model):
-    item = models.ForeignKey(Item, on_delete=models.CASCADE, related_name='images')
+    item = models.OneToOneField(Item, on_delete=models.CASCADE, related_name='image')
     image = models.ImageField(upload_to='items/')
 
     def __str__(self):
         return f"Image for {self.item.name}"
+
 
