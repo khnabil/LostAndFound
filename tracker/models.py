@@ -44,3 +44,11 @@ class ItemImage(models.Model):
         return f"Image for {self.item.name}"
 
 
+class Comment(models.Model):
+    item = models.ForeignKey(Item, on_delete=models.CASCADE, related_name='comments')
+    user_name = models.CharField(max_length=100)
+    text = models.TextField()
+    created_at = models.DateTimeField(auto_now_add=True)
+
+    def __str__(self):
+        return f"{self.user_name} on {self.item.name}"

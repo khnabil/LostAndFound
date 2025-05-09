@@ -1,9 +1,12 @@
 from django.shortcuts import render, redirect, get_object_or_404
 from django.db.models import Count
-from .models import User, Item, ItemImage
+from .models import User, Item, ItemImage, Comment
 from django.contrib.auth.hashers import make_password
-from .forms import ItemForm, ItemImageForm
+from .forms import ItemForm, ItemImageForm, CommentForm
 from django.views.decorators.cache import never_cache
+from django.views.decorators.csrf import csrf_exempt
+from django.http import JsonResponse
+import json
 
 
 # ------------------- LOGIN VIEW -------------------
@@ -103,13 +106,52 @@ def home_view(request):
     if 'user_id' not in request.session:
         return redirect('login')
 
-    items = Item.objects.select_related().prefetch_related('image').order_by('-item_id')
+    items = Item.objects.prefetch_related('comments', 'image').order_by('-item_id')
+    comment_forms = {item.item_id: CommentForm() for item in items}
+
+    if request.method == 'POST':
+        item_id = request.POST.get('item_id')
+        item = Item.objects.get(pk=item_id)
+        form = CommentForm(request.POST)
+
+        if form.is_valid():
+            comment = form.save(commit=False)
+            comment.item = item
+            comment.user_name = request.session.get('user_name', 'Anonymous')
+            comment.save()
+            return redirect('home')  # reload to clear POST
 
     return render(request, 'home.html', {
         'name': request.session.get('user_name'),
-        'items': items
+        'items': items,
+        'comment_forms': comment_forms
     })
 
+
+
+@csrf_exempt
+def post_comment_ajax(request):
+    if request.method == 'POST' and request.headers.get('x-requested-with') == 'XMLHttpRequest':
+        data = json.loads(request.body)
+        item_id = data.get('item_id')
+        text = data.get('text')
+        user_name = request.session.get('user_name', 'Anonymous')
+
+        item = Item.objects.get(pk=item_id)
+
+        comment = Comment.objects.create(
+            item=item,
+            user_name=user_name,
+            text=text
+        )
+
+        return JsonResponse({
+            'user_name': comment.user_name,
+            'text': comment.text,
+            'created_at': comment.created_at.strftime("%b %d, %Y %H:%M"),
+        })
+
+    return JsonResponse({'error': 'Invalid request'}, status=400)
 
 
 @never_cache

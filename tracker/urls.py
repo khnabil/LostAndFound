@@ -9,5 +9,7 @@ urlpatterns = [
     path('my-profile/', views.my_profile_view, name='my_profile'),
     path('post/', views.post_list_view, name='post_list'),
     path('post/new/', views.create_item_view, name='create_found_item'),
+    path('post-comment/', views.post_comment_ajax, name='post_comment_ajax'),
+
 
 ]

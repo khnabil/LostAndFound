@@ -61,6 +61,66 @@
             margin-top: 100px;
             color: black;
         }
+        .comments-section {
+            margin-top: 25px;
+            padding-top: 15px;
+            border-top: 1px solid #ccc;
+        }
+
+        .comments-section h4 {
+            font-size: 18px;
+            margin-bottom: 10px;
+            color: #444;
+        }
+
+        .comment {
+            background: #f5f5f5;
+            padding: 12px 15px;
+            margin-bottom: 10px;
+            border-radius: 8px;
+            border: 1px solid #ddd;
+            font-size: 14px;
+            line-height: 1.4;
+            position: relative;
+        }
+
+        .comment strong {
+            color: #333;
+        }
+
+        .comment small {
+            display: block;
+            margin-top: 4px;
+            color: #666;
+            font-size: 12px;
+        }
+
+        textarea[id^="comment-text-"] {
+            width: 100%;
+            padding: 10px;
+            border: 1px solid #ccc;
+            border-radius: 6px;
+            font-size: 14px;
+            resize: none;
+            margin-top: 10px;
+            background-color: #fafafa;
+        }
+
+
+        .comments-section button {
+            background-color: #007bff;
+            color: white;
+            padding: 8px 14px;
+            border: none;
+            border-radius: 6px;
+            font-size: 14px;
+            margin-top: 8px;
+            cursor: pointer;
+        }
+
+        .comments-section button:hover {
+            background-color: #0056b3;
+        }
 
         {% comment %} .content h2 {
             font-size: 36px;
@@ -153,20 +213,34 @@
         <h2 style="text-align: center; margin-top: 20px;">All Posts</h2>
     
         {% for item in items %}
-        <div class="post-card">
-            {% if item.image %}
-                <img src="{{ item.image.image.url }}" alt="Item Image">
-            {% endif %}
-            <h3>{{ item.name }}</h3>
-            <p><strong>Description:</strong> {{ item.description }}</p>
-            <p><strong>Location:</strong> {{ item.location }}</p>
-            <p><strong>Date Reported:</strong> {{ item.date_reported }}</p>
-            <p><strong>Posted By:</strong> {{ item.posted_by_name }}</p>
-        </div>
-        {% empty %}
-        <p style="text-align:center; color:white;">No posts available yet.</p>
+<div class="post-card">
+    {% if item.image %}
+        <img src="{{ item.image.image.url }}" alt="Item Image">
+    {% endif %}
+    <h3>{{ item.name }}</h3>
+    <p><strong>Description:</strong> {{ item.description }}</p>
+    <p><strong>Location:</strong> {{ item.location }}</p>
+    <p><strong>Date Reported:</strong> {{ item.date_reported }}</p>
+    <p><strong>Posted By:</strong> {{ item.posted_by_name }}</p>
+
+    <div class="comments-section" style="margin-top: 20px;">
+    <h4>Comments</h4>
+    <div id="comments-{{ item.item_id }}">
+        {% for comment in item.comments.all %}
+            <div class="comment">
+                <strong>{{ comment.user_name }}</strong>: {{ comment.text }}
+                <br><small>{{ comment.created_at|date:"M d, Y H:i" }}</small>
+            </div>
         {% endfor %}
     </div>
+
+    <textarea id="comment-text-{{ item.item_id }}" rows="2" placeholder="Write a comment..." style="width: 100%; margin-top: 10px;"></textarea>
+    <button onclick="postComment({{ item.item_id }})" style="margin-top: 5px;">Post Comment</button>
+</div>
+
+</div>
+{% endfor %}
+
     
 
 
@@ -176,6 +250,36 @@
             const links = document.getElementById('navbarLinks');
             links.classList.toggle('active');
         }
+        function postComment(itemId) {
+    const textArea = document.getElementById(`comment-text-${itemId}`);
+    const text = textArea.value.trim();
+    if (!text) return;
+
+    fetch("{% url 'post_comment_ajax' %}", {
+        method: 'POST',
+        headers: {
+            'Content-Type': 'application/json',
+            'X-Requested-With': 'XMLHttpRequest',
+            'X-CSRFToken': '{{ csrf_token }}'
+        },
+        body: JSON.stringify({
+            item_id: itemId,
+            text: text
+        })
+    })
+    .then(response => response.json())
+    .then(data => {
+        if (data.text) {
+            const commentBox = document.getElementById(`comments-${itemId}`);
+            const newComment = document.createElement("div");
+            newComment.className = "comment";
+            newComment.innerHTML = `<strong>${data.user_name}</strong>: ${data.text}<br><small>${data.created_at}</small>`;
+            commentBox.prepend(newComment);
+            textArea.value = "";
+        }
+    })
+    .catch(error => console.error("Error:", error));
+}
     </script>
 </body>
 </html>

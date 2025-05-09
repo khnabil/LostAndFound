@@ -1,5 +1,5 @@
 from django import forms
-from .models import Item, ItemImage
+from .models import Item, ItemImage, Comment
 
 class ItemForm(forms.ModelForm):
     class Meta:
@@ -15,3 +15,16 @@ class ItemImageForm(forms.ModelForm):
         model = ItemImage
         fields = ['image']
 
+
+
+class CommentForm(forms.ModelForm):
+    class Meta:
+        model = Comment
+        fields = ['text']
+        widgets = {
+            'text': forms.Textarea(attrs={
+                'rows': 2,
+                'placeholder': 'Write a comment...',
+                'style': 'width: 100%; resize: none;'
+            })
+        }
