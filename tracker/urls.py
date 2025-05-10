@@ -13,5 +13,8 @@ urlpatterns = [
     path('send-claim/', views.send_claim_request, name='send_claim_request'),
     path('claim-item/<int:item_id>/', views.claim_item_view, name='claim_item'),
     path('delete-claimed-item/<int:item_id>/', views.delete_claimed_item, name='delete_claimed_item'),
+    path('unclaim-item/<int:item_id>/', views.unclaim_item_view, name='unclaim_item'),
+    path('forgot-password/', views.forgot_password_view, name='forgot_password'),
+
 
 ]

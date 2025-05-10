@@ -207,7 +207,10 @@
                             style="background-color: #dc3545; color: white; padding: 8px 12px; border: none; border-radius: 6px; cursor: pointer; margin-top: 10px;">
                                 Delete Post
                         </button>
-
+                        <button onclick="unclaimItem({{ item.item_id }})"
+                            style="background-color: #ffc107; color: white; padding: 8px 12px; border: none; border-radius: 6px; cursor: pointer; margin-top: 10px; margin-left: 10px;">
+                            Unclaim
+                        </button>
                     {% endif %}
                 </div>
             {% endfor %}
@@ -217,27 +220,46 @@
     </div>
 
     <script>
-function deleteClaimedItem(itemId) {
-    if (confirm("Are you sure you want to delete this claimed item?")) {
-        fetch(`/delete-claimed-item/${itemId}/`, {
-            method: 'POST',
-            headers: {
-                'X-CSRFToken': '{{ csrf_token }}',
-                'X-Requested-With': 'XMLHttpRequest'
+        function deleteClaimedItem(itemId) {
+            if (confirm("Are you sure you want to delete this claimed item?")) {
+                fetch(`/delete-claimed-item/${itemId}/`, {
+                    method: 'POST',
+                    headers: {
+                        'X-CSRFToken': '{{ csrf_token }}',
+                        'X-Requested-With': 'XMLHttpRequest'
+                    }
+                })
+                .then(res => res.json())
+                .then(data => {
+                    if (data.success) {
+                        alert("Item deleted successfully.");
+                        location.reload(); // refresh the profile page
+                    } else {
+                        alert("Failed to delete item.");
+                    }
+                })
+                .catch(error => console.error("Error deleting item:", error));
             }
-        })
-        .then(res => res.json())
-        .then(data => {
-            if (data.success) {
-                alert("Item deleted successfully.");
-                location.reload(); // refresh the profile page
-            } else {
-                alert("Failed to delete item.");
+        }
+        function unclaimItem(itemId) {
+            if (confirm("Are you sure you want to unclaim this item?")) {
+                fetch(`/unclaim-item/${itemId}/`, {
+                    method: 'POST',
+                    headers: {
+                        'X-CSRFToken': '{{ csrf_token }}',
+                        'X-Requested-With': 'XMLHttpRequest'
+                    }
+                })
+                .then(res => res.json())
+                .then(data => {
+                    alert(data.message);
+                    if (data.success) {
+                        location.reload();
+                    }
+                })
+                .catch(error => console.error("Unclaim failed:", error));
             }
-        })
-        .catch(error => console.error("Error deleting item:", error));
-    }
-}
+        }
 </script>
 
 </body>

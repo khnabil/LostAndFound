@@ -9,8 +9,10 @@ from django.http import JsonResponse
 from django.views.decorators.http import require_POST
 import json
 from django.contrib import messages
+from django.contrib.auth.hashers import check_password
 
 # ------------------- LOGIN VIEW -------------------
+
 @never_cache
 def login_view(request):
     if request.method == 'POST':
@@ -18,13 +20,18 @@ def login_view(request):
         password = request.POST.get('password')
 
         try:
-            user = User.objects.get(user_id=user_id, password=password)
-            request.session['user_id'] = user.user_id
-            request.session['user_name'] = user.name
-            request.session['user_type'] = user.get_user_type_display()
-            return redirect('home')
+            user = User.objects.get(user_id=user_id)
+
+            if check_password(password, user.password):
+                request.session['user_id'] = user.user_id
+                request.session['user_name'] = user.name
+                request.session['user_type'] = user.get_user_type_display()
+                return redirect('home')
+            else:
+                # Password didn't match
+                return render(request, 'login.html', {'error': 'Incorrect password. Please try again.'})
         except User.DoesNotExist:
-            return render(request, 'login.html', {'error': 'No user data found. Please try again.'})
+            return render(request, 'login.html', {'error': 'User ID not found. Please try again.'})
 
     return render(request, 'login.html')
 
@@ -65,6 +72,24 @@ def create_account_view(request):
             return render(request, 'create_account.html', {'error': 'Invalid user type selected.'})
 
     return render(request, 'create_account.html')
+
+
+def forgot_password_view(request):
+    if request.method == 'POST':
+        user_id = request.POST.get('user_id')
+        name = request.POST.get('name')
+        new_password = request.POST.get('new_password')
+
+        try:
+            user = User.objects.get(user_id=user_id, name=name)
+            user.password = make_password(new_password)
+            user.save()
+            return render(request, 'forgot_password.html', {'success': 'Password updated successfully. You can now login.'})
+        except User.DoesNotExist:
+            return render(request, 'forgot_password.html', {'error': 'No user found with that ID and name.'})
+
+    return render(request, 'forgot_password.html')
+
 
 
 # ------------------- PROFILE -------------------
@@ -152,6 +177,7 @@ def post_comment_ajax(request):
 
     return JsonResponse({'error': 'Invalid request'}, status=400)
 
+# ------------------- Post list -------------------
 
 @never_cache
 def post_list_view(request):
@@ -230,3 +256,22 @@ def delete_claimed_item(request, item_id):
     item.delete()
     messages.success(request, "Claimed item deleted successfully.")
     return JsonResponse({'success': True})
+
+@require_POST
+def unclaim_item_view(request, item_id):
+    user_id = request.session.get('user_id')
+    item = get_object_or_404(Item, pk=item_id)
+
+    # Only the poster can unclaim
+    if item.posted_by_id != user_id:
+        return JsonResponse({'success': False, 'message': 'Unauthorized'}, status=403)
+
+    # Reset claim-related fields
+    item.is_found = False
+    item.claim_image.delete(save=False)  # delete image file from storage
+    item.claim_image = None
+    item.claimer_name = None
+    item.claimer_id = None
+    item.save()
+
+    return JsonResponse({'success': True, 'message': 'Item has been unclaimed.'})

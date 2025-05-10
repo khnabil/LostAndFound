@@ -121,12 +121,6 @@
         .comments-section button:hover {
             background-color: #0056b3;
         }
-
-        {% comment %} .content h2 {
-            font-size: 36px;
-            margin-bottom: 20px;
-        } {% endcomment %}
-
         .content p {
             font-size: 18px;
         }
@@ -282,8 +276,6 @@
 
     <textarea id="comment-text-{{ item.item_id }}" rows="2" placeholder="Write a comment..." style="width: 100%; margin-top: 10px;"></textarea>
     <button onclick="postComment({{ item.item_id }})" style="margin-top: 5px;">Post Comment</button>
-    {% comment %} <button class="claim_btn" onclick="sendClaim({{ item.item_id }})" style="background-color: #28a745;">Claim</button> {% endcomment %}
-    {% comment %} <button onclick="sendClaim({{ item.item_id }})" style="background-color: #28a745;">Claim</button> {% endcomment %}
     <div style="margin-top: 10px;">
     {% if item.is_found %}
         <span style="
